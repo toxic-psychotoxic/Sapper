@@ -4,9 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Сапёр — Telegram WebApp</title>
-  <link rel="stylesheet" href="style.css" />
+
+  <!-- 🔹 Подключаем обновлённые версии CSS и Telegram WebApp SDK -->
+  <link rel="stylesheet" href="style.css?v=2" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
+
 <body>
   <div class="container">
     <header>
@@ -17,16 +20,21 @@
       </div>
     </header>
 
+    <!-- 🔹 Кнопки выбора сложности -->
     <div class="difficulty">
       <button data-size="6">👶 6×6</button>
       <button data-size="9" class="active">⚙️ 9×9</button>
       <button data-size="12">💀 12×12</button>
     </div>
 
+    <!-- 🔹 Игровое поле -->
     <div id="board" class="board"></div>
+
+    <!-- 🔹 Сообщения (победа, проигрыш) -->
     <div id="message" class="message"></div>
   </div>
 
-  <script src="script.js"></script>
+  <!-- 🔥 Обновлённый скрипт с фиксом size и версии для сброса кэша -->
+  <script src="script.js?v=2"></script>
 </body>
 </html>
