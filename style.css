@@ -1,0 +1,107 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(180deg, #dce3e9 0%, #b0bec5 100%);
+  height: 100vh;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+.container {
+  width: 95%;
+  max-width: 420px;
+  text-align: center;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.timer {
+  font-size: 18px;
+  color: #333;
+}
+
+.controls button {
+  font-size: 20px;
+  border: none;
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: 0.2s;
+}
+.controls button.active {
+  background: #ffeb3b;
+}
+.controls button:active {
+  transform: scale(0.95);
+}
+
+.difficulty {
+  margin: 8px 0;
+}
+.difficulty button {
+  margin: 0 4px;
+  border: none;
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.difficulty button.active {
+  background: #8bc34a;
+  color: #fff;
+}
+
+.board {
+  display: grid;
+  justify-content: center;
+  gap: 1px; /* аккуратные, минимальные зазоры */
+  margin-top: 10px;
+  background: #90a4ae;
+  padding: 5px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+.cell {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  background: #cfd8dc;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: calc(1.2rem - 0.05 * var(--size, 9));
+  color: #263238;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s, transform 0.1s;
+}
+.cell.revealed {
+  background: #eceff1;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+.cell.flag {
+  background: #ffeb3b;
+}
+.cell.mine {
+  background: #e57373;
+  color: #fff;
+}
+
+.message {
+  margin-top: 12px;
+  font-size: 20px;
+  font-weight: 600;
+}
