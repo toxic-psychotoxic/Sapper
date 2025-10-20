@@ -156,13 +156,16 @@ function getCellEl(x, y) {
 function endGame(win) {
   gameOver = true;
   clearInterval(timer);
+
   if (!win) {
     msgEl.textContent = "💥 Игра окончена!";
     revealMines();
   } else {
     msgEl.textContent = "🎉 Победа!";
     if (tg) {
-      tg.sendData(JSON.stringify({ action: "sapper_score", time }));
+      // ✅ Исправлено: теперь передаём и размер поля
+      tg.sendData(JSON.stringify({ action: "sapper_score", time, size }));
+      tg.showAlert(`✅ Победа! Размер: ${size}×${size}, время: ${time} сек`);
       setTimeout(() => tg.close(), 500);
     }
   }
@@ -190,7 +193,9 @@ flagBtn.addEventListener("click", () => {
   isFlagMode = !isFlagMode;
   flagBtn.classList.toggle("active", isFlagMode);
 });
+
 restartBtn.addEventListener("click", () => generateBoard(size));
+
 diffBtns.forEach(btn => {
   btn.addEventListener("click", () => {
     diffBtns.forEach(b => b.classList.remove("active"));
@@ -200,4 +205,5 @@ diffBtns.forEach(btn => {
   });
 });
 
+// стартовая сложность
 generateBoard(size);
