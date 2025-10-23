@@ -40,7 +40,6 @@ function createEmptyBoard(n) {
 }
 
 function placeMines(n, skipX, skipY) {
-  // увеличим долю мин
   mineCount = Math.floor(n * n * 0.22);
   let placed = 0;
   while (placed < mineCount) {
@@ -60,8 +59,7 @@ function placeMines(n, skipX, skipY) {
       for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
           const ny = y + dy, nx = x + dx;
-          if (ny >= 0 && ny < n && nx >= 0 && nx < n && board[ny][nx].mine)
-            count++;
+          if (ny >= 0 && ny < n && nx >= 0 && nx < n && board[ny][nx].mine) count++;
         }
       }
       board[y][x].count = count;
@@ -111,12 +109,20 @@ function onCellClick(e) {
   const y = +e.target.dataset.y;
   const cell = board[y][x];
 
-  if (isFlagMode) return toggleFlag(e.target, x, y);
-  if (cell.revealed || cell.flagged) return;
+  if (isFlagMode) {
+    toggleFlag(e.target, x, y);
+    return;
+  }
+  if (cell.flagged) return;
 
   if (firstClick) {
     placeMines(size, x, y);
     firstClick = false;
+  }
+
+  if (cell.revealed && cell.count > 0) {
+    handleNumberClick(x, y);
+    return;
   }
 
   if (cell.mine) {
@@ -130,6 +136,34 @@ function onCellClick(e) {
   checkWin();
 }
 
+function handleNumberClick(x, y) {
+  const cell = board[y][x];
+  let flagged = 0;
+  let hidden = [];
+
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      const ny = y + dy, nx = x + dx;
+      if (ny >= 0 && ny < size && nx >= 0 && nx < size) {
+        const ncell = board[ny][nx];
+        if (ncell.flagged) flagged++;
+        else if (!ncell.revealed) hidden.push({ x: nx, y: ny });
+      }
+    }
+  }
+
+  if (flagged === cell.count) {
+    hidden.forEach(({ x, y }) => revealCell(x, y));
+    checkWin();
+  } else {
+    hidden.forEach(({ x, y }) => getCellEl(x, y).classList.add("hint"));
+    setTimeout(() => {
+      hidden.forEach(({ x, y }) => getCellEl(x, y).classList.remove("hint"));
+    }, 500);
+  }
+}
+
 function revealCell(x, y) {
   const cell = board[y][x];
   if (cell.revealed || cell.flagged) return;
@@ -137,8 +171,9 @@ function revealCell(x, y) {
   revealedCount++;
   const el = getCellEl(x, y);
   el.classList.add("revealed");
-  if (cell.count > 0) el.textContent = cell.count;
-  else {
+  if (cell.count > 0) {
+    el.textContent = cell.count;
+  } else {
     for (let dy = -1; dy <= 1; dy++) {
       for (let dx = -1; dx <= 1; dx++) {
         const ny = y + dy, nx = x + dx;
@@ -156,17 +191,14 @@ function getCellEl(x, y) {
 function endGame(win) {
   gameOver = true;
   clearInterval(timer);
-
   if (!win) {
     msgEl.textContent = "💥 Игра окончена!";
     revealMines();
   } else {
     msgEl.textContent = "🎉 Победа!";
     if (tg) {
-      // ✅ Исправлено: теперь передаём и размер поля
-      tg.sendData(JSON.stringify({ action: "sapper_score", time, size }));
-      tg.showAlert(`✅ Победа! Размер: ${size}×${size}, время: ${time} сек`);
-      setTimeout(() => tg.close(), 500);
+      tg.sendData(JSON.stringify({ action: "sapper_score", time }));
+      setTimeout(() => tg.close(), 700);
     }
   }
 }
@@ -192,6 +224,7 @@ function checkWin() {
 flagBtn.addEventListener("click", () => {
   isFlagMode = !isFlagMode;
   flagBtn.classList.toggle("active", isFlagMode);
+  flagBtn.setAttribute("aria-pressed", String(isFlagMode));
 });
 
 restartBtn.addEventListener("click", () => generateBoard(size));
@@ -205,5 +238,7 @@ diffBtns.forEach(btn => {
   });
 });
 
-// стартовая сложность
 generateBoard(size);
+
+generateBoard(size);
+
