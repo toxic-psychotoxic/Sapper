@@ -28,20 +28,17 @@ header {
   color: #333;
 }
 
-.controls button {
-  font-size: 20px;
+#restartBtn {
+  font-size: 24px;
   border: none;
   background: #fff;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 10px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.2);
   cursor: pointer;
   transition: 0.2s;
 }
-.controls button.active {
-  background: #ffeb3b;
-}
-.controls button:active {
+#restartBtn:active {
   transform: scale(0.95);
 }
 
@@ -65,7 +62,7 @@ header {
 .board {
   display: grid;
   justify-content: center;
-  gap: 1px; /* аккуратные, минимальные зазоры */
+  gap: 1px;
   margin-top: 10px;
   background: #90a4ae;
   padding: 5px;
@@ -99,9 +96,36 @@ header {
   background: #e57373;
   color: #fff;
 }
+.cell.hint {
+  background: #fff59d !important;
+}
 
 .message {
   margin-top: 12px;
   font-size: 20px;
   font-weight: 600;
+}
+
+.flag-container {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+}
+
+.flag-big {
+  font-size: 48px;
+  border: none;
+  background: #fff;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: 0.2s;
+}
+.flag-big.active {
+  background: #ffeb3b;
+}
+.flag-big:active {
+  transform: scale(0.95);
 }
