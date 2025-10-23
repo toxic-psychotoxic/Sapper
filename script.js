@@ -18,6 +18,7 @@ let time = 0;
 let gameOver = false;
 let firstClick = true;
 
+// ==== Таймер ====
 const startTimer = () => {
   clearInterval(timer);
   time = 0;
@@ -28,6 +29,7 @@ const startTimer = () => {
   }, 1000);
 };
 
+// ==== Создание пустого поля ====
 function createEmptyBoard(n) {
   return Array.from({ length: n }, () =>
     Array.from({ length: n }, () => ({
@@ -39,6 +41,7 @@ function createEmptyBoard(n) {
   );
 }
 
+// ==== Расставляем мины ====
 function placeMines(n, skipX, skipY) {
   mineCount = Math.floor(n * n * 0.22);
   let placed = 0;
@@ -52,6 +55,7 @@ function placeMines(n, skipX, skipY) {
     }
   }
 
+  // Подсчёт чисел
   for (let y = 0; y < n; y++) {
     for (let x = 0; x < n; x++) {
       if (board[y][x].mine) continue;
@@ -67,6 +71,7 @@ function placeMines(n, skipX, skipY) {
   }
 }
 
+// ==== Генерация игрового поля ====
 function generateBoard(n) {
   board = createEmptyBoard(n);
   revealedCount = 0;
@@ -95,6 +100,7 @@ function generateBoard(n) {
   startTimer();
 }
 
+// ==== Установка/снятие флага ====
 function toggleFlag(el, x, y) {
   const cell = board[y][x];
   if (cell.revealed) return;
@@ -103,34 +109,41 @@ function toggleFlag(el, x, y) {
   el.textContent = cell.flagged ? "🚩" : "";
 }
 
+// ==== Обработка клика ====
 function onCellClick(e) {
   if (gameOver) return;
-  const x = +e.target.dataset.x;
-  const y = +e.target.dataset.y;
+
+  const el = e.currentTarget;
+  const x = +el.dataset.x;
+  const y = +el.dataset.y;
   const cell = board[y][x];
 
-  // если включён режим флага — ставим/снимаем флаг, и всё
-  if (isFlagMode) {
-    if (!cell.revealed) toggleFlag(e.target, x, y);
-    return; // ❗ не обрабатываем клики по цифрам
+  // === Если клик по уже открытой цифре ===
+  if (cell.revealed && cell.count > 0) {
+    handleNumberClick(x, y); // <-- выполняется и при активном флаге
+    return;
   }
 
+  // === Если режим флажка и клетка закрыта ===
+  if (isFlagMode && !cell.revealed) {
+    toggleFlag(el, x, y);
+    if (navigator.vibrate) navigator.vibrate(20);
+    return;
+  }
+
+  // Если клетка под флагом — не трогаем
   if (cell.flagged) return;
 
+  // Первая клетка — расставляем мины
   if (firstClick) {
     placeMines(size, x, y);
     firstClick = false;
   }
 
-  // если клетка открыта (цифра) — поведение "чорд-клик"
-  if (cell.revealed && cell.count > 0) {
-    handleNumberClick(x, y);
-    return;
-  }
-
+  // Если мина
   if (cell.mine) {
-    e.target.classList.add("mine");
-    e.target.textContent = "💣";
+    el.classList.add("mine");
+    el.textContent = "💣";
     endGame(false);
     return;
   }
@@ -139,6 +152,7 @@ function onCellClick(e) {
   checkWin();
 }
 
+// ==== Обработка клика по цифре ("чорд") ====
 function handleNumberClick(x, y) {
   const cell = board[y][x];
   let flagged = 0;
@@ -167,6 +181,7 @@ function handleNumberClick(x, y) {
   }
 }
 
+// ==== Открытие клетки ====
 function revealCell(x, y) {
   const cell = board[y][x];
   if (cell.revealed || cell.flagged) return;
@@ -180,30 +195,15 @@ function revealCell(x, y) {
     for (let dy = -1; dy <= 1; dy++) {
       for (let dx = -1; dx <= 1; dx++) {
         const ny = y + dy, nx = x + dx;
-        if (ny >= 0 && ny < size && nx >= 0 && nx < size)
-          revealCell(nx, ny);
+        if (ny >= 0 && ny < size && nx >= 0 && nx < size) revealCell(nx, ny);
       }
     }
   }
 }
 
+// ==== Вспомогательные функции ====
 function getCellEl(x, y) {
   return boardEl.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
-}
-
-function endGame(win) {
-  gameOver = true;
-  clearInterval(timer);
-  if (!win) {
-    msgEl.textContent = "💥 Игра окончена!";
-    revealMines();
-  } else {
-    msgEl.textContent = "🎉 Победа!";
-    if (tg) {
-      tg.sendData(JSON.stringify({ action: "sapper_score", time }));
-      setTimeout(() => tg.close(), 700);
-    }
-  }
 }
 
 function revealMines() {
@@ -224,6 +224,22 @@ function checkWin() {
   if (revealedCount >= totalSafe) endGame(true);
 }
 
+function endGame(win) {
+  gameOver = true;
+  clearInterval(timer);
+  if (!win) {
+    msgEl.textContent = "💥 Игра окончена!";
+    revealMines();
+  } else {
+    msgEl.textContent = "🎉 Победа!";
+    if (tg) {
+      tg.sendData(JSON.stringify({ action: "sapper_score", time }));
+      setTimeout(() => tg.close(), 700);
+    }
+  }
+}
+
+// ==== Кнопки ====
 flagBtn.addEventListener("click", () => {
   isFlagMode = !isFlagMode;
   flagBtn.classList.toggle("active", isFlagMode);
@@ -241,7 +257,5 @@ diffBtns.forEach(btn => {
   });
 });
 
+// ==== Старт ====
 generateBoard(size);
-
-
-
