@@ -19,7 +19,7 @@ let gameOver = false;
 let firstClick = true;
 
 // ==== Таймер ====
-const startTimer = () => {
+function startTimer() {
   clearInterval(timer);
   time = 0;
   timerEl.textContent = "0";
@@ -27,9 +27,9 @@ const startTimer = () => {
     time++;
     timerEl.textContent = time;
   }, 1000);
-};
+}
 
-// ==== Создание пустого поля ====
+// ==== Создание поля ====
 function createEmptyBoard(n) {
   return Array.from({ length: n }, () =>
     Array.from({ length: n }, () => ({
@@ -54,8 +54,7 @@ function placeMines(n, skipX, skipY) {
       placed++;
     }
   }
-
-  // Подсчёт чисел
+  // считаем цифры
   for (let y = 0; y < n; y++) {
     for (let x = 0; x < n; x++) {
       if (board[y][x].mine) continue;
@@ -100,7 +99,7 @@ function generateBoard(n) {
   startTimer();
 }
 
-// ==== Установка/снятие флага ====
+// ==== Флаги ====
 function toggleFlag(el, x, y) {
   const cell = board[y][x];
   if (cell.revealed) return;
@@ -109,38 +108,37 @@ function toggleFlag(el, x, y) {
   el.textContent = cell.flagged ? "🚩" : "";
 }
 
-// ==== Обработка клика ====
+// ==== Обработка кликов ====
 function onCellClick(e) {
   if (gameOver) return;
 
-  const el = e.currentTarget;
+  const el = e.currentTarget;          // важно: не e.target
   const x = +el.dataset.x;
   const y = +el.dataset.y;
   const cell = board[y][x];
 
-  // === Если клик по уже открытой цифре ===
+  // Если клик по уже открытой цифре — всегда выполняем "чорд"
   if (cell.revealed && cell.count > 0) {
-    handleNumberClick(x, y); // выполняется всегда, даже при активном флажке
+    handleNumberClick(x, y);
     return;
   }
 
-  // === Если режим флажка и клетка закрыта ===
+  // Режим флажка: на закрытой клетке ставим/снимаем флаг
   if (isFlagMode && !cell.revealed) {
     toggleFlag(el, x, y);
-    if (navigator.vibrate) navigator.vibrate(20);
     return;
   }
 
-  // Если клетка под флагом — не трогаем
+  // Флаг — не открываем
   if (cell.flagged) return;
 
-  // Первая клетка — расставляем мины
+  // Первая клетка — безопасная расстановка мин
   if (firstClick) {
     placeMines(size, x, y);
     firstClick = false;
   }
 
-  // Если мина
+  // Прямой клик по мине
   if (cell.mine) {
     el.classList.add("mine");
     el.textContent = "💣";
@@ -152,11 +150,15 @@ function onCellClick(e) {
   checkWin();
 }
 
-// ==== Обработка клика по цифре ("чорд") ====
+// ==== Клик по цифре ("чорд") ====
+// Если число флагов вокруг равно числу на клетке:
+//   - если среди НЕпомеченных соседей есть мина → немедленный взрыв (проигрыш);
+//   - иначе открываем все оставшиеся соседние.
 function handleNumberClick(x, y) {
   const cell = board[y][x];
   let flagged = 0;
-  let hidden = [];
+  const hidden = [];
+  const neighbors = [];
 
   for (let dy = -1; dy <= 1; dy++) {
     for (let dx = -1; dx <= 1; dx++) {
@@ -164,16 +166,28 @@ function handleNumberClick(x, y) {
       const ny = y + dy, nx = x + dx;
       if (ny >= 0 && ny < size && nx >= 0 && nx < size) {
         const ncell = board[ny][nx];
+        neighbors.push({ x: nx, y: ny, cell: ncell });
         if (ncell.flagged) flagged++;
-        else if (!ncell.revealed) hidden.push({ x: nx, y: ny });
+        else if (!ncell.revealed) hidden.push({ x: nx, y: ny, cell: ncell });
       }
     }
   }
 
   if (flagged === cell.count) {
+    // Проверяем, нет ли среди неотмеченных соседей мины
+    const unflaggedMine = hidden.find(({ cell }) => cell.mine);
+    if (unflaggedMine) {
+      const boomEl = getCellEl(unflaggedMine.x, unflaggedMine.y);
+      boomEl.classList.add("mine");
+      boomEl.textContent = "💣";
+      endGame(false);
+      return;
+    }
+    // Открываем оставшиеся
     hidden.forEach(({ x, y }) => revealCell(x, y));
     checkWin();
   } else {
+    // Подсветка недостающих
     hidden.forEach(({ x, y }) => getCellEl(x, y).classList.add("hint"));
     setTimeout(() => {
       hidden.forEach(({ x, y }) => getCellEl(x, y).classList.remove("hint"));
@@ -181,14 +195,25 @@ function handleNumberClick(x, y) {
   }
 }
 
-// ==== Открытие клетки ====
+// ==== Открытие клеток ====
+// На всякий случай: если сюда попадёт мина (например, через "чорд") — сразу взрыв.
 function revealCell(x, y) {
   const cell = board[y][x];
   if (cell.revealed || cell.flagged) return;
+
+  if (cell.mine) {
+    const elMine = getCellEl(x, y);
+    elMine.classList.add("mine");
+    elMine.textContent = "💣";
+    endGame(false);
+    return;
+  }
+
   cell.revealed = true;
   revealedCount++;
   const el = getCellEl(x, y);
   el.classList.add("revealed");
+
   if (cell.count > 0) {
     el.textContent = cell.count;
   } else {
@@ -203,17 +228,8 @@ function revealCell(x, y) {
 
 // ==== Проверка победы ====
 function checkWin() {
-  // считаем все неоткрытые клетки
-  let closed = 0;
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      if (!board[y][x].revealed) closed++;
-    }
-  }
-  // если все неоткрытые — это мины, победа
-  if (closed === mineCount) {
-    endGame(true);
-  }
+  const totalSafe = size * size - mineCount;
+  if (revealedCount >= totalSafe) endGame(true);
 }
 
 // ==== Вспомогательные ====
@@ -236,22 +252,22 @@ function revealMines() {
 
 // ==== Завершение игры ====
 function endGame(win) {
+  if (gameOver) return;
   gameOver = true;
   clearInterval(timer);
+
   if (!win) {
     msgEl.textContent = "💥 Игра окончена!";
     revealMines();
   } else {
     msgEl.textContent = "🎉 Победа!";
-    // отправляем результат в Telegram надёжно
     if (tg) {
       try {
         tg.sendData(JSON.stringify({ action: "sapper_score", time }));
       } catch (err) {
-        console.error("Ошибка sendData:", err);
+        console.error("sendData error:", err);
       }
-      // ждём дольше, чтобы данные гарантированно ушли
-      setTimeout(() => tg.close(), 1500);
+      setTimeout(() => tg.close(), 2000);
     }
   }
 }
@@ -276,4 +292,3 @@ diffBtns.forEach(btn => {
 
 // ==== Старт ====
 generateBoard(size);
-
