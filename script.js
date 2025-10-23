@@ -263,7 +263,12 @@ function endGame(win) {
     msgEl.textContent = "🎉 Победа!";
     if (tg) {
       try {
-        tg.sendData(JSON.stringify({ action: "sapper_score", time }));
+        tg.sendData(JSON.stringify({
+  action: "sapper_score",
+  time,
+  size
+}));
+
       } catch (err) {
         console.error("sendData error:", err);
       }
@@ -292,3 +297,4 @@ diffBtns.forEach(btn => {
 
 // ==== Старт ====
 generateBoard(size);
+
