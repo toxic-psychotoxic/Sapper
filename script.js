@@ -120,7 +120,7 @@ function onCellClick(e) {
 
   // === Если клик по уже открытой цифре ===
   if (cell.revealed && cell.count > 0) {
-    handleNumberClick(x, y); // <-- выполняется и при активном флаге
+    handleNumberClick(x, y); // выполняется всегда, даже при активном флажке
     return;
   }
 
@@ -201,7 +201,22 @@ function revealCell(x, y) {
   }
 }
 
-// ==== Вспомогательные функции ====
+// ==== Проверка победы ====
+function checkWin() {
+  // считаем все неоткрытые клетки
+  let closed = 0;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (!board[y][x].revealed) closed++;
+    }
+  }
+  // если все неоткрытые — это мины, победа
+  if (closed === mineCount) {
+    endGame(true);
+  }
+}
+
+// ==== Вспомогательные ====
 function getCellEl(x, y) {
   return boardEl.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
 }
@@ -219,11 +234,7 @@ function revealMines() {
   }
 }
 
-function checkWin() {
-  const totalSafe = size * size - mineCount;
-  if (revealedCount >= totalSafe) endGame(true);
-}
-
+// ==== Завершение игры ====
 function endGame(win) {
   gameOver = true;
   clearInterval(timer);
@@ -232,9 +243,15 @@ function endGame(win) {
     revealMines();
   } else {
     msgEl.textContent = "🎉 Победа!";
+    // отправляем результат в Telegram надёжно
     if (tg) {
-      tg.sendData(JSON.stringify({ action: "sapper_score", time }));
-      setTimeout(() => tg.close(), 700);
+      try {
+        tg.sendData(JSON.stringify({ action: "sapper_score", time }));
+      } catch (err) {
+        console.error("Ошибка sendData:", err);
+      }
+      // ждём дольше, чтобы данные гарантированно ушли
+      setTimeout(() => tg.close(), 1500);
     }
   }
 }
@@ -259,3 +276,4 @@ diffBtns.forEach(btn => {
 
 // ==== Старт ====
 generateBoard(size);
+
