@@ -109,10 +109,12 @@ function onCellClick(e) {
   const y = +e.target.dataset.y;
   const cell = board[y][x];
 
+  // если включён режим флага — ставим/снимаем флаг, и всё
   if (isFlagMode) {
-    toggleFlag(e.target, x, y);
-    return;
+    if (!cell.revealed) toggleFlag(e.target, x, y);
+    return; // ❗ не обрабатываем клики по цифрам
   }
+
   if (cell.flagged) return;
 
   if (firstClick) {
@@ -120,6 +122,7 @@ function onCellClick(e) {
     firstClick = false;
   }
 
+  // если клетка открыта (цифра) — поведение "чорд-клик"
   if (cell.revealed && cell.count > 0) {
     handleNumberClick(x, y);
     return;
@@ -240,5 +243,5 @@ diffBtns.forEach(btn => {
 
 generateBoard(size);
 
-generateBoard(size);
+
 
